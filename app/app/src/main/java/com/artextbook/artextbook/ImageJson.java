@@ -2,12 +2,12 @@ package com.artextbook.artextbook;
 
 public class ImageJson {
 
-    String name;
-    String image;
+    public String name;
+    public String type;
 
-    public ImageJson(String name, String image) {
+    public ImageJson(String name, String type) {
         this.name = name;
-        this.image = image;
+        this.type = type;
     }
 
 }

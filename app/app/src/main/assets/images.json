@@ -1,14 +1,14 @@
 [
   {
     "name": "20190126_201355.jpg",
-    "image": "graph1"
+    "type": "droid"
   },
   {
     "name": "20190126_175034.jpg",
-    "image": "graph2"
+    "type": "droid"
   },
   {
     "name": "20190126_201524.jpg",
-    "image": "graph2"
+    "type": "droid"
   }
 ]

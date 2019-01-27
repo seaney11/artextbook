@@ -1,47 +1,20 @@
 package com.artextbook.artextbook;
 
-import android.os.UserHandle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.app.Activity;
-import android.app.ActivityManager;
-import android.content.Context;
-import android.os.Build;
-import android.os.Build.VERSION_CODES;
-import android.util.Log;
-import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import com.artextbook.artextbook.helpers.SnackbarHelper;
-import com.google.ar.core.Anchor;
-import com.google.ar.core.ArCoreApk;
+import com.artextbook.artextbook.image_nodes.AugmentedImageNode;
+import com.artextbook.artextbook.image_nodes.AugmentedImageNodeFactory;
 import com.google.ar.core.AugmentedImage;
-import com.google.ar.core.AugmentedImageDatabase;
-import com.google.ar.core.Config;
 import com.google.ar.core.Frame;
-import com.google.ar.core.HitResult;
-import com.google.ar.core.Plane;
-import com.google.ar.core.Session;
 import com.google.ar.core.TrackingState;
-import com.google.ar.core.exceptions.UnavailableApkTooOldException;
-import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
-import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException;
-import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
-import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException;
-import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.FrameTime;
-import com.google.ar.sceneform.rendering.ViewRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
-import com.google.ar.sceneform.ux.TransformableNode;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private ArFragment arFragment;
@@ -49,7 +22,6 @@ public class MainActivity extends AppCompatActivity {
 
     // Augmented image and its associated center pose anchor, keyed by the augmented image in
     // the database.
-    private final Map<AugmentedImage, AugmentedImageNode> augmentedImageMap = new HashMap<>();
     AugmentedImageNode imageNode;
 
     @Override
@@ -66,9 +38,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (augmentedImageMap.isEmpty()) {
-            fitToScanView.setVisibility(View.VISIBLE);
-        }
     }
 
     /**
@@ -96,18 +65,19 @@ public class MainActivity extends AppCompatActivity {
                     // Have to switch to UI Thread to update View.
                     fitToScanView.setVisibility(View.GONE);
                     if (imageNode != null) {
-                        imageNode.remove();
-                        imageNode = null;
+                        break;
                     }
-                    imageNode = new AugmentedImageNode(this, augmentedImage.getName());
-                    imageNode.setImage(augmentedImage);
-                    augmentedImageMap.put(augmentedImage, imageNode);
+                    AugmentedImageNodeFactory factory = new AugmentedImageNodeFactory(this);
+                    imageNode = factory.createImageNode(this, augmentedImage);
                     arFragment.getArSceneView().getScene().addChild(imageNode);
                     SnackbarHelper.getInstance().showMessage(this, String.format("Detected Diagram %s", augmentedImage.getName()));
                     break;
 
                 case STOPPED:
-                    augmentedImageMap.remove(augmentedImage);
+                    if (imageNode != null) {
+                        imageNode.remove();
+                        imageNode = null;
+                    }
                     break;
             }
         }
