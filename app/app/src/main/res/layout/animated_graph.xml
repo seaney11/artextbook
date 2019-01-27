@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<co.blankkeys.animatedlinegraphview.AnimatedLineGraphView
+    android:id="@+id/graph"
+    android:layout_width="400dp"
+    android:layout_height="200dp"
+    app:duration="1000"
+    app:lineThickness="20"
+    app:lineColor="@color/colorAccent"
+    app:circleRadius="20"
+    app:circleColor="@color/colorAccent"
+    app:paddingPercent=".05"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="#ffffff"/>

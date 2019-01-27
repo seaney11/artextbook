@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">ARTextbook</string>
+    <string name="start_button_text">Start AR</string>
+    <string name="fit_image_to_scan">Fit Image To Scan</string>
+</resources>
