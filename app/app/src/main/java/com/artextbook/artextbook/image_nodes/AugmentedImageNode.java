@@ -53,8 +53,7 @@ public abstract class AugmentedImageNode extends AnchorNode {
   private AugmentedImage image;
   protected List<Node> nodes;
 
-  CompletableFuture<Void> allRenderables;
-  List<CompletableFuture<? extends Renderable>> completableFutures;
+  protected List<CompletableFuture<?>> completableFutures;
 
   public AugmentedImageNode(Context context, AugmentedImage image) {
       this.image = image;
@@ -63,10 +62,10 @@ public abstract class AugmentedImageNode extends AnchorNode {
       nodes = new ArrayList<>();
       loadRenderables(context);
       CompletableFuture<Void> all = CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[completableFutures.size()]));
-      all.thenAccept(a -> createNodes());
+      all.thenAccept(a -> createNodes(context));
   }
 
-  protected abstract void createNodes();
+  protected abstract void createNodes(Context context);
 
   protected abstract void loadRenderables(Context context);
 

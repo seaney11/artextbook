@@ -3,6 +3,8 @@ package com.artextbook.artextbook.image_nodes;
 import android.content.Context;
 
 import com.artextbook.artextbook.ImageJson;
+import com.artextbook.artextbook.image_nodes.solar.SolarSystemImageNode;
+import com.artextbook.artextbook.image_nodes.spring.SpringAnimationImageNode;
 import com.google.ar.core.AugmentedImage;
 import com.google.gson.Gson;
 
@@ -41,6 +43,10 @@ public class AugmentedImageNodeFactory {
                 return new GraphImageNode(context, image);
             case "droid":
                 return new DroidAnimationImageNode(context, image);
+            case "spring":
+                return new SpringAnimationImageNode(context, image);
+            case "solar":
+                return new SolarSystemImageNode(context, image);
             default:
                 throw new RuntimeException("Invalid Json File");
         }

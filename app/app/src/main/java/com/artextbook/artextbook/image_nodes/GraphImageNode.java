@@ -20,6 +20,7 @@ public class GraphImageNode extends AugmentedImageNode {
         super(context, image);
     }
 
+    @Override
     public void loadRenderables(Context context){
         LayoutInflater inflater = LayoutInflater.from(context);
         View v = inflater.inflate(R.layout.graph, null, false);
@@ -29,8 +30,9 @@ public class GraphImageNode extends AugmentedImageNode {
         completableFutures.add(viewRenderable);
     }
 
+    @Override
     @SuppressWarnings({"AndroidApiChecker", "FutureReturnValueIgnored"})
-    public void createNodes() {
+    public void createNodes(Context context) {
         // Make the 4 corner nodes.
         Vector3 localPosition = new Vector3();
         Node viewNode = new Node();
