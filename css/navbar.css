@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto');
+#navbar {
+    background-color: #F8F8F8;
+    -webkit-box-shadow: 0 8px 6px -6px #E7E7E7;
+    -moz-box-shadow: 0 8px 6px -6px #E7E7E7;
+    box-shadow: 0 8px 6px -6px #E7E7E7;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 100px;
+    height: 75px;
+    color: #777;
+}
+
+.title {
+    font-family: Roboto;
+    font-weight: bold;
+    font-size: 2em;
+}
+
+#landing {
+    min-height: calc(100vh - 75px);
+    background-color: black;
+}
+
+body {
+    box-sizing:border-box;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+@keyframes bounce {
+    0% {bottom: 0;}
+    50% {bottom: 20px;}
+    100% {bottom: 0;}
+}
+i {
+  display: block;
+  color: #fff;
+}
+.arrow {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  margin-left: -20px;
+  width: 40px;
+  height: 60px;
+    /*change with size of arrow to make sit on bottom */
+/*   background-image: url(); */
+/*   background-size: contain; */
+}
+
+.bounce {
+  -moz-animation: bounce 2s infinite;
+  -webkit-animation: bounce 2s infinite;
+  animation: bounce 2s infinite;
+}
