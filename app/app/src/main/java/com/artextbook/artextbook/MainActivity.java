@@ -1,5 +1,6 @@
 package com.artextbook.artextbook;
 
+import android.os.UserHandle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.app.Activity;
@@ -10,97 +11,105 @@ import android.os.Build.VERSION_CODES;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.view.View;
+import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.artextbook.artextbook.helpers.SnackbarHelper;
 import com.google.ar.core.Anchor;
+import com.google.ar.core.ArCoreApk;
+import com.google.ar.core.AugmentedImage;
+import com.google.ar.core.AugmentedImageDatabase;
+import com.google.ar.core.Config;
+import com.google.ar.core.Frame;
 import com.google.ar.core.HitResult;
 import com.google.ar.core.Plane;
+import com.google.ar.core.Session;
+import com.google.ar.core.TrackingState;
+import com.google.ar.core.exceptions.UnavailableApkTooOldException;
+import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
+import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException;
+import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
+import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException;
 import com.google.ar.sceneform.AnchorNode;
+import com.google.ar.sceneform.FrameTime;
 import com.google.ar.sceneform.rendering.ViewRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 public class MainActivity extends AppCompatActivity {
-
-    private static final String TAG = MainActivity.class.getSimpleName();
-    private static final double MIN_OPENGL_VERSION = 3.0;
-
     private ArFragment arFragment;
-    private ViewRenderable viewRenderable;
+    private ImageView fitToScanView;
+
+    // Augmented image and its associated center pose anchor, keyed by the augmented image in
+    // the database.
+    private final Map<AugmentedImage, AugmentedImageNode> augmentedImageMap = new HashMap<>();
+    AugmentedImageNode imageNode;
 
     @Override
-    @SuppressWarnings({"AndroidApiChecker", "FutureReturnValueIgnored"})
-    // CompletableFuture requires api level 24
-    // FutureReturnValueIgnored is not valid
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        if (!checkIsSupportedDeviceOrFinish(this)) {
-            return;
-        }
-
         setContentView(R.layout.activity_main);
+
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.ux_fragment);
+        fitToScanView = findViewById(R.id.image_view_fit_to_scan);
 
-        // When you build a Renderable, Sceneform loads its resources in the background while returning
-        // a CompletableFuture. Call thenAccept(), handle(), or check isDone() before calling get().
-        ViewRenderable.builder()
-                .setView(this, R.layout.graph)
-                .build()
-                .thenAccept(renderable -> viewRenderable = renderable)
-                .exceptionally(
-                        throwable -> {
-                            Toast toast =
-                                    Toast.makeText(this, "Unable to load graph renderable", Toast.LENGTH_LONG);
-                            toast.setGravity(Gravity.CENTER, 0, 0);
-                            toast.show();
-                            return null;
-                        });
+        arFragment.getArSceneView().getScene().addOnUpdateListener(this::onUpdateFrame);
+    }
 
-        arFragment.setOnTapArPlaneListener(
-                (HitResult hitResult, Plane plane, MotionEvent motionEvent) -> {
-                    if (viewRenderable == null) {
-                        return;
-                    }
-
-                    // Create the Anchor.
-                    Anchor anchor = hitResult.createAnchor();
-                    AnchorNode anchorNode = new AnchorNode(anchor);
-                    anchorNode.setParent(arFragment.getArSceneView().getScene());
-
-                    // Create the transformable andy and add it to the anchor.
-                    TransformableNode andy = new TransformableNode(arFragment.getTransformationSystem());
-                    andy.setParent(anchorNode);
-                    andy.setRenderable(viewRenderable);
-                    andy.select();
-                });
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (augmentedImageMap.isEmpty()) {
+            fitToScanView.setVisibility(View.VISIBLE);
+        }
     }
 
     /**
-     * Returns false and displays an error message if Sceneform can not run, true if Sceneform can run
-     * on this device.
+     * Registered with the Sceneform Scene object, this method is called at the start of each frame.
      *
-     * <p>Sceneform requires Android N on the device as well as OpenGL 3.0 capabilities.
-     *
-     * <p>Finishes the activity if Sceneform can not run
+     * @param frameTime - time since last frame.
      */
-    public static boolean checkIsSupportedDeviceOrFinish(final Activity activity) {
-        if (Build.VERSION.SDK_INT < VERSION_CODES.N) {
-            Log.e(TAG, "Sceneform requires Android N or later");
-            Toast.makeText(activity, "Sceneform requires Android N or later", Toast.LENGTH_LONG).show();
-            activity.finish();
-            return false;
+    private void onUpdateFrame(FrameTime frameTime) {
+        Frame frame = arFragment.getArSceneView().getArFrame();
+
+        // If there is no frame or ARCore is not tracking yet, just return.
+        if (frame == null || frame.getCamera().getTrackingState() != TrackingState.TRACKING) {
+            return;
         }
-        String openGlVersionString =
-                ((ActivityManager) activity.getSystemService(Context.ACTIVITY_SERVICE))
-                        .getDeviceConfigurationInfo()
-                        .getGlEsVersion();
-        if (Double.parseDouble(openGlVersionString) < MIN_OPENGL_VERSION) {
-            Log.e(TAG, "Sceneform requires OpenGL ES 3.0 later");
-            Toast.makeText(activity, "Sceneform requires OpenGL ES 3.0 or later", Toast.LENGTH_LONG)
-                    .show();
-            activity.finish();
-            return false;
+
+        Collection<AugmentedImage> updatedAugmentedImages =
+                frame.getUpdatedTrackables(AugmentedImage.class);
+        for (AugmentedImage augmentedImage : updatedAugmentedImages) {
+            switch (augmentedImage.getTrackingState()) {
+
+                case PAUSED:
+                    break;
+
+                case TRACKING:
+                    // Have to switch to UI Thread to update View.
+                    fitToScanView.setVisibility(View.GONE);
+                    if (imageNode != null) {
+                        imageNode.remove();
+                        imageNode = null;
+                    }
+                    imageNode = new AugmentedImageNode(this, augmentedImage.getName());
+                    imageNode.setImage(augmentedImage);
+                    augmentedImageMap.put(augmentedImage, imageNode);
+                    arFragment.getArSceneView().getScene().addChild(imageNode);
+                    SnackbarHelper.getInstance().showMessage(this, String.format("Detected Diagram %s", augmentedImage.getName()));
+                    break;
+
+                case STOPPED:
+                    augmentedImageMap.remove(augmentedImage);
+                    break;
+            }
         }
-        return true;
     }
 }
